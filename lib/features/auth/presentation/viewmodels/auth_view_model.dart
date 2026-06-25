@@ -12,6 +12,7 @@ class AuthViewModel extends ChangeNotifier {
   String loginMode = 'customer';
   bool signup = false;
   bool busy = false;
+  DateTime? _emailRetryAt;
 
   void setLoginMode(String value) {
     loginMode = value;
@@ -30,6 +31,10 @@ class AuthViewModel extends ChangeNotifier {
     if (signup && name.text.trim().isEmpty) {
       return const AuthResult(message: 'Enter your full name.');
     }
+    final waitMessage = _emailRateLimitMessage();
+    if (waitMessage != null && signup) {
+      return AuthResult(message: waitMessage);
+    }
 
     busy = true;
     notifyListeners();
@@ -44,14 +49,16 @@ class AuthViewModel extends ChangeNotifier {
           password.text,
           loginMode,
         );
-        return const AuthResult(
-          message: 'Account created. Confirm your email, then log in.',
+        await _repo.signIn(email.text.trim(), password.text);
+        return AuthResult(
+          authenticatedMode: loginMode,
+          message: 'Account created successfully.',
         );
       }
       await _repo.signIn(email.text.trim(), password.text);
       return AuthResult(authenticatedMode: loginMode);
     } catch (e) {
-      return AuthResult(message: e.toString());
+      return AuthResult(message: _friendlyAuthError(e));
     } finally {
       busy = false;
       notifyListeners();
@@ -62,8 +69,46 @@ class AuthViewModel extends ChangeNotifier {
     if (email.text.trim().isEmpty) {
       return 'Enter your email to reset your password.';
     }
-    await _repo.resetPassword(email.text.trim());
-    return 'Password reset email sent.';
+    final waitMessage = _emailRateLimitMessage();
+    if (waitMessage != null) return waitMessage;
+    try {
+      await _repo.resetPassword(email.text.trim());
+      return 'Password reset email sent.';
+    } catch (e) {
+      return _friendlyAuthError(e);
+    }
+  }
+
+  String? _emailRateLimitMessage() {
+    final retryAt = _emailRetryAt;
+    if (retryAt == null) return null;
+    final wait = retryAt.difference(DateTime.now());
+    if (wait.isNegative) {
+      _emailRetryAt = null;
+      return null;
+    }
+    final minutes = wait.inMinutes + 1;
+    return 'Too many emails were requested. Please wait about $minutes minute${minutes == 1 ? '' : 's'} and try again.';
+  }
+
+  String _friendlyAuthError(Object error) {
+    final message = error.toString();
+    if (message.contains('over_email_send_rate_limit') ||
+        message.contains('email rate limit exceeded') ||
+        message.contains('statusCode: 429')) {
+      _emailRetryAt = DateTime.now().add(const Duration(minutes: 10));
+      return 'Supabase has temporarily blocked more auth emails for this project. Please wait a few minutes, then try again.';
+    }
+    if (message.contains('Invalid login credentials')) {
+      return 'Invalid email or password.';
+    }
+    if (message.contains('User already registered')) {
+      return 'This email is already registered. Log in instead.';
+    }
+    if (message.contains('Email not confirmed')) {
+      return 'Account created, but Supabase email confirmation is enabled. Confirm your email or turn off email confirmation for testing.';
+    }
+    return message.replaceFirst('Exception: ', '');
   }
 
   @override

@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Fixmate Flutter",
+      "request": "launch",
+      "type": "dart",
+      "toolArgs": [
+        "--dart-define=SUPABASE_URL=https://iuglzyewnixqneqtktte.supabase.co",
+        "--dart-define=SUPABASE_ANON_KEY=sb_publishable_Xel6eKNmPXR3h41u9gy-WQ_kftNxL-k"
+      ]
+    }
+  ]
+}

@@ -159,8 +159,17 @@ begin
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'full_name', ''),
-    array['customer']::public.user_role[]
+    case
+      when new.raw_user_meta_data->>'account_type' = 'provider'
+        then array['customer', 'provider']::public.user_role[]
+      else array['customer']::public.user_role[]
+    end
   );
+  if new.raw_user_meta_data->>'account_type' = 'provider' then
+    insert into public.provider_profiles (id)
+    values (new.id)
+    on conflict (id) do nothing;
+  end if;
   return new;
 end;
 $$;
