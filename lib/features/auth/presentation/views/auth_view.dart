@@ -203,17 +203,21 @@ class _AuthScreenState extends State<AuthScreen> {
                       ),
                       const SizedBox(height: 8),
                       TextButton(
-                        onPressed: viewModel.toggleSignup,
+                        onPressed:
+                            viewModel.busy ? null : viewModel.toggleSignup,
                         child: Text(viewModel.signup
                             ? 'Already have an account? Log in'
                             : 'Create a new account'),
                       ),
                       TextButton(
-                        onPressed: () async {
-                          final message = await viewModel.resetPassword();
-                          if (!context.mounted) return;
-                          if (message != null) _snack(context, message);
-                        },
+                        onPressed: viewModel.busy
+                            ? null
+                            : () async {
+                                final message =
+                                    await viewModel.resetPassword();
+                                if (!context.mounted) return;
+                                if (message != null) _snack(context, message);
+                              },
                         child: const Text('Forgot password'),
                       ),
                     ],

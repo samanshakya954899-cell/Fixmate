@@ -19,19 +19,19 @@ class AuthenticationGateViewModel extends ChangeNotifier {
 
   Session? session;
   String loginMode = 'customer';
-  bool demoLoggedIn = false;
+  bool guestLoggedIn = false;
 
   int get initialIndex => 0;
 
   void setLoginMode(String mode) {
     loginMode = mode;
-    demoLoggedIn = true;
+    guestLoggedIn = true;
     notifyListeners();
   }
 
   void handleSignOut() {
     loginMode = 'customer';
-    demoLoggedIn = false;
+    guestLoggedIn = false;
     session = null;
     notifyListeners();
   }

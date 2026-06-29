@@ -25,6 +25,7 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   Future<AuthResult> submit() async {
+    if (busy) return const AuthResult();
     if (email.text.trim().isEmpty || password.text.isEmpty) {
       return const AuthResult(message: 'Enter your email and password.');
     }
@@ -40,16 +41,27 @@ class AuthViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       if (!_repo.configured) {
+        if (signup) {
+          return const AuthResult(
+            message:
+                'Connect Supabase to create secure accounts and save login details.',
+          );
+        }
         return AuthResult(authenticatedMode: loginMode);
       }
       if (signup) {
-        await _repo.signUp(
+        final hasSession = await _repo.signUp(
           name.text.trim(),
           email.text.trim(),
           password.text,
           loginMode,
         );
-        await _repo.signIn(email.text.trim(), password.text);
+        if (!hasSession) {
+          return const AuthResult(
+            message:
+                'Account created. Please check your email to confirm it before logging in.',
+          );
+        }
         return AuthResult(
           authenticatedMode: loginMode,
           message: 'Account created successfully.',
@@ -66,16 +78,25 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   Future<String?> resetPassword() async {
+    if (busy) return null;
     if (email.text.trim().isEmpty) {
       return 'Enter your email to reset your password.';
     }
+    if (!_repo.configured) {
+      return 'Password reset email is available after Supabase is configured.';
+    }
     final waitMessage = _emailRateLimitMessage();
     if (waitMessage != null) return waitMessage;
+    busy = true;
+    notifyListeners();
     try {
       await _repo.resetPassword(email.text.trim());
       return 'Password reset email sent.';
     } catch (e) {
       return _friendlyAuthError(e);
+    } finally {
+      busy = false;
+      notifyListeners();
     }
   }
 

@@ -25,6 +25,7 @@ class ServiceBookingApp extends StatelessWidget {
           foregroundColor: Colors.white,
           centerTitle: false,
           elevation: 0,
+          toolbarHeight: 70,
           titleTextStyle: TextStyle(
             color: Colors.white,
             fontSize: 20,
@@ -34,40 +35,45 @@ class ServiceBookingApp extends StatelessWidget {
         ),
         inputDecorationTheme: InputDecorationTheme(
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: Color(0xFFE4EAF0)),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: _primaryColor, width: 1.6),
           ),
           filled: true,
-          fillColor: _surfaceColor,
+          fillColor: const Color(0xFFFAFCFD),
           labelStyle: const TextStyle(color: _mutedColor),
           prefixIconColor: _primaryColor,
         ),
         cardTheme: CardThemeData(
-          elevation: 0,
+          elevation: 1,
+          shadowColor: const Color(0x1F0E7C7B),
           color: _surfaceColor,
           margin: EdgeInsets.zero,
+          surfaceTintColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-            side: const BorderSide(color: Color(0xFFE8EEF2)),
+            borderRadius: BorderRadius.circular(8),
+            side: const BorderSide(color: Color(0xFFE3EBEF)),
           ),
         ),
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(
             backgroundColor: _primaryColor,
             foregroundColor: Colors.white,
-            minimumSize: const Size.fromHeight(48),
+            minimumSize: const Size.fromHeight(50),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(10),
             ),
-            textStyle: const TextStyle(fontWeight: FontWeight.w800),
+            textStyle: const TextStyle(
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0,
+            ),
           ),
         ),
         outlinedButtonTheme: OutlinedButtonThemeData(
@@ -76,7 +82,7 @@ class ServiceBookingApp extends StatelessWidget {
             side: const BorderSide(color: Color(0xFFB7D8D7)),
             minimumSize: const Size(0, 44),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(10),
             ),
             textStyle: const TextStyle(fontWeight: FontWeight.w700),
           ),
@@ -94,7 +100,7 @@ class ServiceBookingApp extends StatelessWidget {
           ),
           side: BorderSide.none,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(999),
+            borderRadius: BorderRadius.circular(10),
           ),
         ),
         navigationBarTheme: NavigationBarThemeData(

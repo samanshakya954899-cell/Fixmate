@@ -10,7 +10,7 @@ Flutter app for customers to book repair services and providers/mechanics to pub
 - Provider service publishing with charge, area, experience and availability.
 - Booking statuses, chat, ratings and app notifications.
 - Supabase SQL schema with Row Level Security policies.
-- Demo fallback when Supabase keys are not configured.
+- Local fallback when Supabase keys are not configured.
 
 ## Setup
 
@@ -29,18 +29,22 @@ flutter pub get
 flutter run
 ```
 
-The app includes these Supabase defaults for local development:
+By default, the app connects to this Supabase project:
 
 ```text
-SUPABASE_URL=https://iuglzyewnixqneqtktte.supabase.co
-SUPABASE_ANON_KEY=sb_publishable_Xel6eKNmPXR3h41u9gy-WQ_kftNxL-k
+SUPABASE_URL=https://qeguvopwnyyluynychtj.supabase.co
+SUPABASE_ANON_KEY=sb_publishable_R6Zv_H3C8xozJ2EAbqIRRQ_jyUnsOJ6
 ```
 
-You can still override them when needed:
+You can override those values when needed:
 
 ```bash
 flutter run --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supabase.co --dart-define=SUPABASE_ANON_KEY=YOUR_ANON_KEY
 ```
+
+When Supabase is configured, signup uses Supabase Auth. The app sends the
+email and password to Supabase Auth, and Supabase stores the account securely.
+Do not store raw passwords in app tables such as `profiles`.
 
 If this folder does not have Android/iOS platform folders yet, run:
 
@@ -82,4 +86,4 @@ Initial service categories are TV, Freezer, Cooler, AC and Other.
 
 ## Supabase Auth Troubleshooting
 
-If signup or password reset shows an email rate limit message, Supabase has temporarily blocked more confirmation/reset emails for the project. Wait a few minutes before trying again. For local testing, you can also disable email confirmations in the Supabase dashboard under Authentication settings so signup does not need to send a confirmation email every time.
+If signup or password reset shows an email rate limit message, Supabase has temporarily blocked more confirmation/reset emails for the project. Wait a few minutes before trying again. For production or repeated testing, configure a custom SMTP provider in the Supabase dashboard, or disable email confirmations in the Supabase dashboard while testing.

@@ -25,10 +25,10 @@ python manage.py runserver 127.0.0.1:8000
 
 ## Use Supabase As The Backend Database
 
-Your Supabase project URL is:
+Use your Supabase project URL:
 
 ```text
-https://iuglzyewnixqneqtktte.supabase.co
+https://YOUR_PROJECT.supabase.co
 ```
 
 Django cannot connect to Supabase PostgreSQL with only the project URL. It also needs your private database password from:
@@ -87,5 +87,5 @@ set DJANGO_SECRET_KEY=change-me
 set DJANGO_DEBUG=1
 set DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost
 set SUPABASE_DB_PASSWORD=your-private-supabase-database-password
-set SUPABASE_DB_HOST=db.iuglzyewnixqneqtktte.supabase.co
+set SUPABASE_DB_HOST=db.YOUR_PROJECT.supabase.co
 ```

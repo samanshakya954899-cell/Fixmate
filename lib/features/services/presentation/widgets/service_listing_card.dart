@@ -1,7 +1,11 @@
 part of fixmate_app;
 
 class ServiceListingCard extends StatelessWidget {
-  const ServiceListingCard({super.key, required this.service, required this.onBook});
+  const ServiceListingCard({
+    super.key,
+    required this.service,
+    required this.onBook,
+  });
 
   final Map<String, dynamic> service;
   final VoidCallback onBook;
@@ -26,8 +30,12 @@ class ServiceListingCard extends StatelessWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEAF5F4),
-                    borderRadius: BorderRadius.circular(16),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFFE6F6F5), Color(0xFFFFF3EF)],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     _iconFor(service['icon_name'] ?? category['icon_name']),
@@ -59,7 +67,7 @@ class ServiceListingCard extends StatelessWidget {
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFFF3EF),
-                    borderRadius: BorderRadius.circular(999),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
                     'Rs ${service['base_charge'] ?? 0}',
@@ -89,7 +97,11 @@ class ServiceListingCard extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               service['description'] ?? '',
-              style: const TextStyle(color: _inkColor, height: 1.35),
+              style: const TextStyle(
+                color: _inkColor,
+                height: 1.4,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             const SizedBox(height: 10),
             IconLine(

@@ -37,8 +37,12 @@ class BookingCard extends StatelessWidget {
                   width: 46,
                   height: 46,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEAF5F4),
-                    borderRadius: BorderRadius.circular(15),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFFE6F6F5), Color(0xFFFFF3EF)],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
                     Icons.handyman_outlined,
@@ -73,7 +77,11 @@ class BookingCard extends StatelessWidget {
             const SizedBox(height: 14),
             Text(
               booking['issue_description'] ?? '',
-              style: const TextStyle(color: _inkColor, height: 1.35),
+              style: const TextStyle(
+                color: _inkColor,
+                height: 1.4,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             const SizedBox(height: 10),
             IconLine(
@@ -148,7 +156,8 @@ class BookingCard extends StatelessWidget {
                   ),
                 if (status == 'completed')
                   OutlinedButton.icon(
-                    onPressed: () => _openBookingRatingSheet(context, repo, booking),
+                    onPressed: () =>
+                        _openBookingRatingSheet(context, repo, booking),
                     icon: const Icon(Icons.star_border),
                     label: const Text('Rate'),
                   ),

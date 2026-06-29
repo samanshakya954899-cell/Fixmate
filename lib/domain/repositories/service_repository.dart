@@ -6,7 +6,7 @@ abstract class ServiceRepository {
   String get currentEmail;
 
   Future<void> signIn(String email, String password);
-  Future<void> signUp(
+  Future<bool> signUp(
     String name,
     String email,
     String password,

@@ -29,7 +29,7 @@ class _AuthGateState extends State<AuthGate> {
     return AnimatedBuilder(
       animation: viewModel,
       builder: (context, _) {
-    if (!viewModel.configured && !viewModel.demoLoggedIn) {
+    if (!viewModel.configured && !viewModel.guestLoggedIn) {
       return AuthScreen(
         repo: viewModel.repo,
         onAuthenticated: viewModel.setLoginMode,
@@ -38,7 +38,6 @@ class _AuthGateState extends State<AuthGate> {
     if (!viewModel.configured) {
       return HomeShell(
         repo: viewModel.repo,
-        demoMode: true,
         mode: viewModel.loginMode,
         initialIndex: viewModel.initialIndex,
         onSignOut: viewModel.handleSignOut,

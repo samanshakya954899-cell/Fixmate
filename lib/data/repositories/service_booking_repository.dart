@@ -12,7 +12,7 @@ class ServiceBookingRepository implements ServiceRepository {
       configured ? _client.auth.currentUser!.id : 'demo-user';
 
   String get currentEmail =>
-      configured ? (_client.auth.currentUser?.email ?? '') : 'demo@fixseva.app';
+      configured ? (_client.auth.currentUser?.email ?? '') : '';
 
   final List<Map<String, dynamic>> _demoCategories = [
     {'id': 'cat-tv', 'name': 'TV', 'icon_name': 'tv'},
@@ -67,17 +67,18 @@ class ServiceBookingRepository implements ServiceRepository {
     await _client.auth.signInWithPassword(email: email, password: password);
   }
 
-  Future<void> signUp(
+  Future<bool> signUp(
     String name,
     String email,
     String password,
     String accountType,
   ) async {
-    await _client.auth.signUp(
+    final response = await _client.auth.signUp(
       email: email,
       password: password,
       data: {'full_name': name, 'account_type': accountType},
     );
+    return response.session != null;
   }
 
   Future<void> resetPassword(String email) async {

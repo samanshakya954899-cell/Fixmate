@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -53,18 +55,20 @@ TEMPLATES = [
 WSGI_APPLICATION = "fixmate_backend.wsgi.application"
 
 SUPABASE_DB_PASSWORD = os.environ.get("SUPABASE_DB_PASSWORD", "")
+SUPABASE_DB_HOST = os.environ.get("SUPABASE_DB_HOST", "")
 
 if SUPABASE_DB_PASSWORD:
+    if not SUPABASE_DB_HOST:
+        raise ImproperlyConfigured(
+            "SUPABASE_DB_HOST is required when SUPABASE_DB_PASSWORD is set."
+        )
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
             "NAME": os.environ.get("SUPABASE_DB_NAME", "postgres"),
             "USER": os.environ.get("SUPABASE_DB_USER", "postgres"),
             "PASSWORD": SUPABASE_DB_PASSWORD,
-            "HOST": os.environ.get(
-                "SUPABASE_DB_HOST",
-                "db.iuglzyewnixqneqtktte.supabase.co",
-            ),
+            "HOST": SUPABASE_DB_HOST,
             "PORT": os.environ.get("SUPABASE_DB_PORT", "5432"),
             "OPTIONS": {
                 "sslmode": "require",
@@ -74,8 +78,8 @@ if SUPABASE_DB_PASSWORD:
 else:
     DATABASES = {
         "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.environ.get("DJANGO_DB_PATH", str(BASE_DIR / "db.sqlite3")),
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.environ.get("DJANGO_DB_PATH", str(BASE_DIR / "db.sqlite3")),
         }
     }
 
