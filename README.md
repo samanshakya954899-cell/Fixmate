@@ -67,6 +67,20 @@ python manage.py runserver 127.0.0.1:8000
 
 See `backend/README.md` for the full endpoint list.
 
+To run the Flutter app against Django instead of direct Supabase table access, pass `BACKEND_URL`:
+
+```bash
+flutter run --dart-define=BACKEND_URL=http://127.0.0.1:8000
+```
+
+For the Android emulator, use:
+
+```bash
+flutter run --dart-define=BACKEND_URL=http://10.0.2.2:8000
+```
+
+Keep Supabase secret keys on the Django server only. Do not pass `sb_secret_...` values through `--dart-define` or commit them to the repo.
+
 ## Supabase Tables
 
 The schema creates:

@@ -8,7 +8,7 @@ class AuthScreen extends StatefulWidget {
   });
 
   final ServiceRepository repo;
-  final ValueChanged<String> onAuthenticated;
+  final FutureOr<void> Function(String mode) onAuthenticated;
 
   @override
   State<AuthScreen> createState() => _AuthScreenState();
@@ -34,7 +34,7 @@ class _AuthScreenState extends State<AuthScreen> {
     if (!mounted) return;
     if (result.message != null) _snack(context, result.message!);
     if (result.authenticatedMode != null) {
-      widget.onAuthenticated(result.authenticatedMode!);
+      await widget.onAuthenticated(result.authenticatedMode!);
     }
   }
 

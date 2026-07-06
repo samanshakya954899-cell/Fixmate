@@ -30,77 +30,130 @@ class _CustomerHomeState extends State<CustomerHome> {
     return AnimatedBuilder(
       animation: viewModel,
       builder: (context, _) => RefreshIndicator(
-      onRefresh: viewModel.refresh,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const AppHero(
-            icon: Icons.build_circle_outlined,
-            title: 'Choose a service',
-            subtitle:
-                'Book nearby verified providers directly or post an open request.',
-          ),
-          const SizedBox(height: 18),
-          const SectionTitle(
-            title: 'Categories',
-            subtitle: 'Select a repair type',
-          ),
-          const SizedBox(height: 10),
-          if (viewModel.loading && viewModel.categories.isEmpty)
-            const LinearProgressIndicator()
-          else
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final category in viewModel.categories)
-                  ChoiceChip(
-                    avatar: Icon(_iconFor(category['icon_name']), size: 18),
-                    label: Text(category['name']),
-                    selected: viewModel.categoryId == category['id'],
-                    onSelected: (_) =>
-                        viewModel.selectCategory(category['id'] as String),
-                  ),
-              ],
+        onRefresh: viewModel.refresh,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            const AppHero(
+              icon: Icons.build_circle_outlined,
+              title: 'Choose a service',
+              subtitle:
+                  'Book nearby verified providers directly or post an open request.',
             ),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: viewModel.categoryId == null
-                ? null
-                : () => _openBookingRequestForm(context, widget.repo, viewModel.categoryId!,
-                    type: 'open'),
-            icon: const Icon(Icons.campaign),
-            label: const Text('Post an open request'),
-          ),
-          const SizedBox(height: 18),
-          const SectionTitle(
-            title: 'Available providers',
-            subtitle: 'Best matching services',
-          ),
-          const SizedBox(height: 10),
-          if (viewModel.loading && viewModel.services.isEmpty)
-            const Center(child: CircularProgressIndicator())
-          else if (viewModel.services.isEmpty)
-            const EmptyState(
-                text: 'No providers are available in this category yet.')
-          else
-            Column(
-              children: [
-                for (final service in viewModel.services)
-                  ServiceListingCard(
-                    service: service,
-                    onBook: () => _openBookingRequestForm(
-                      context,
-                      widget.repo,
-                      service['category_id'] as String,
-                      type: 'direct',
-                      service: service,
+            const SizedBox(height: 18),
+            const SectionTitle(
+              title: 'Categories',
+              subtitle: 'Select a repair type',
+            ),
+            const SizedBox(height: 10),
+            if (viewModel.loading && viewModel.categories.isEmpty)
+              const LinearProgressIndicator()
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final category in viewModel.categories)
+                    ChoiceChip(
+                      avatar: Icon(_iconFor(category['icon_name']), size: 18),
+                      label: Text(category['name']),
+                      selected: viewModel.categoryId == category['id'],
+                      onSelected: (_) =>
+                          viewModel.selectCategory(category['id'] as String),
                     ),
-                  ),
-              ],
+                ],
+              ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: viewModel.categoryId == null
+                  ? null
+                  : () => _openBookingRequestForm(
+                        context,
+                        widget.repo,
+                        viewModel.categoryId!,
+                        type: 'open',
+                      ),
+              icon: const Icon(Icons.campaign),
+              label: const Text('Post an open request'),
             ),
-        ],
+            const SizedBox(height: 18),
+            const SectionTitle(
+              title: 'Available providers',
+              subtitle: 'Best matching services',
+            ),
+            const SizedBox(height: 10),
+            if (viewModel.loading && viewModel.services.isEmpty)
+              const Center(child: CircularProgressIndicator())
+            else if (viewModel.errorMessage != null)
+              _ServicesLoadError(
+                message: viewModel.errorMessage!,
+                onRetry: viewModel.refresh,
+              )
+            else if (viewModel.services.isEmpty)
+              const EmptyState(
+                  text: 'No providers are available in this category yet.')
+            else
+              Column(
+                children: [
+                  for (final service in viewModel.services)
+                    ServiceListingCard(
+                      service: service,
+                      onBook: () => _openBookingRequestForm(
+                        context,
+                        widget.repo,
+                        service['category_id'] as String,
+                        type: 'direct',
+                        service: service,
+                      ),
+                    ),
+                ],
+              ),
+          ],
+        ),
       ),
+    );
+  }
+}
+
+class _ServicesLoadError extends StatelessWidget {
+  const _ServicesLoadError({
+    required this.message,
+    required this.onRetry,
+  });
+
+  final String message;
+  final Future<void> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.cloud_off_outlined,
+              color: _mutedColor,
+              size: 36,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: _mutedColor,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Try again'),
+            ),
+          ],
+        ),
       ),
     );
   }

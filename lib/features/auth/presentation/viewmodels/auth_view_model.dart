@@ -68,6 +68,7 @@ class AuthViewModel extends ChangeNotifier {
         );
       }
       await _repo.signIn(email.text.trim(), password.text);
+      await _repo.rememberPreferredRole(loginMode);
       return AuthResult(authenticatedMode: loginMode);
     } catch (e) {
       return AuthResult(message: _friendlyAuthError(e));

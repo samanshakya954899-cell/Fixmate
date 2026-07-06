@@ -5,14 +5,31 @@ class ServiceBookingRepository implements ServiceRepository {
 
   final bool configured;
   final _uuid = const Uuid();
+  static const _requestTimeout = Duration(seconds: 15);
 
   SupabaseClient get _client => Supabase.instance.client;
 
+  User? get _currentUser => configured
+      ? _client.auth.currentUser ?? _client.auth.currentSession?.user
+      : null;
+
+  bool get _hasCurrentUser => !configured || _currentUser != null;
+
   String get currentUserId =>
-      configured ? _client.auth.currentUser!.id : 'demo-user';
+      configured ? (_currentUser?.id ?? '') : 'demo-user';
 
   String get currentEmail =>
       configured ? (_client.auth.currentUser?.email ?? '') : '';
+
+  bool get _localStoreActive => !configured;
+
+  String get preferredRole {
+    if (!configured) return 'customer';
+    final metadata = _currentUser?.userMetadata ?? {};
+    return _normalizedRole(
+      metadata['last_role'] ?? metadata['account_type'],
+    );
+  }
 
   final List<Map<String, dynamic>> _demoCategories = [
     {'id': 'cat-tv', 'name': 'TV', 'icon_name': 'tv'},
@@ -63,6 +80,58 @@ class ServiceBookingRepository implements ServiceRepository {
   final List<Map<String, dynamic>> _demoNotifications = [];
   final List<Map<String, dynamic>> _demoMessages = [];
 
+  List<Map<String, dynamic>> _localProviderServices({String? categoryId}) {
+    return _demoServices
+        .where(
+          (service) => categoryId == null || service['category_id'] == categoryId,
+        )
+        .toList();
+  }
+
+  void _addLocalProviderService({
+    required String categoryId,
+    required String title,
+    required String description,
+    required double charge,
+    required String city,
+    required String serviceArea,
+  }) {
+    final category = _demoCategories.firstWhere(
+      (item) => item['id'] == categoryId,
+      orElse: () => _demoCategories.last,
+    );
+    _demoServices.insert(0, {
+      'id': _uuid.v4(),
+      'provider_id': currentUserId,
+      'category_id': categoryId,
+      'title': title,
+      'description': description,
+      'base_charge': charge,
+      'city': city,
+      'service_area': serviceArea,
+      'is_available': true,
+      'service_categories': {'name': category['name']},
+      'provider_profiles': {
+        'business_name': 'My Service',
+        'experience_years': 1,
+        'is_available': true,
+      },
+    });
+  }
+
+  bool _isMissingSchemaError(Object error) {
+    final message = error.toString();
+    return message.contains('PGRST205') ||
+        message.contains('schema cache') ||
+        message.contains('Could not find the table');
+  }
+
+  Exception _missingBackendSchemaException() {
+    return Exception(
+      'Backend tables are missing. Run supabase/fixmate_setup.sql in your Supabase SQL editor, then try again.',
+    );
+  }
+
   Future<void> signIn(String email, String password) async {
     await _client.auth.signInWithPassword(email: email, password: password);
   }
@@ -76,9 +145,22 @@ class ServiceBookingRepository implements ServiceRepository {
     final response = await _client.auth.signUp(
       email: email,
       password: password,
-      data: {'full_name': name, 'account_type': accountType},
+      data: {
+        'full_name': name,
+        'account_type': _normalizedRole(accountType),
+        'last_role': _normalizedRole(accountType),
+      },
     );
     return response.session != null;
+  }
+
+  Future<void> rememberPreferredRole(String role) async {
+    if (!configured) return;
+    final normalizedRole = _normalizedRole(role);
+    final metadata = Map<String, dynamic>.from(_currentUser?.userMetadata ?? {});
+    metadata['last_role'] = normalizedRole;
+    metadata['account_type'] ??= normalizedRole;
+    await _client.auth.updateUser(UserAttributes(data: metadata));
   }
 
   Future<void> resetPassword(String email) async {
@@ -90,29 +172,44 @@ class ServiceBookingRepository implements ServiceRepository {
   }
 
   Future<List<Map<String, dynamic>>> categories() async {
-    if (!configured) return List.of(_demoCategories);
-    final data = await _client
-        .from('service_categories')
-        .select()
-        .eq('is_active', true)
-        .order('name');
-    return List<Map<String, dynamic>>.from(data);
+    if (_localStoreActive) return List.of(_demoCategories);
+    if (!_hasCurrentUser) return [];
+    try {
+      final data = await _client
+          .from('service_categories')
+          .select()
+          .eq('is_active', true)
+          .order('name')
+          .timeout(_requestTimeout);
+      return List<Map<String, dynamic>>.from(data);
+    } catch (e) {
+      if (_isMissingSchemaError(e)) {
+        throw _missingBackendSchemaException();
+      }
+      rethrow;
+    }
   }
 
   Future<List<Map<String, dynamic>>> providerServices(
       {String? categoryId}) async {
-    if (!configured) {
-      return _demoServices
-          .where((service) =>
-              categoryId == null || service['category_id'] == categoryId)
-          .toList();
+    if (_localStoreActive) return _localProviderServices(categoryId: categoryId);
+    if (!_hasCurrentUser) return [];
+    try {
+      var query = _client.from('provider_services').select(
+            '*, service_categories(name), provider_profiles(business_name, experience_years, is_available)',
+          );
+      if (categoryId != null) query = query.eq('category_id', categoryId);
+      final data = await query
+          .eq('is_available', true)
+          .order('created_at')
+          .timeout(_requestTimeout);
+      return List<Map<String, dynamic>>.from(data);
+    } catch (e) {
+      if (_isMissingSchemaError(e)) {
+        throw _missingBackendSchemaException();
+      }
+      rethrow;
     }
-    var query = _client.from('provider_services').select(
-          '*, service_categories(name), provider_profiles(business_name, experience_years, is_available)',
-        );
-    if (categoryId != null) query = query.eq('category_id', categoryId);
-    final data = await query.eq('is_available', true).order('created_at');
-    return List<Map<String, dynamic>>.from(data);
   }
 
   Future<void> saveProfile({
@@ -121,7 +218,8 @@ class ServiceBookingRepository implements ServiceRepository {
     required String city,
     required String address,
   }) async {
-    if (!configured) return;
+    if (_localStoreActive) return;
+    if (!_hasCurrentUser) throw Exception('Please sign in again.');
     await _client.from('profiles').upsert({
       'id': currentUserId,
       'full_name': fullName,
@@ -139,7 +237,13 @@ class ServiceBookingRepository implements ServiceRepository {
     required int experienceYears,
     required bool available,
   }) async {
-    if (!configured) return;
+    if (_localStoreActive) return;
+    if (!_hasCurrentUser) throw Exception('Please sign in again.');
+    await _client.from('profiles').upsert({
+      'id': currentUserId,
+      'full_name': _currentUser?.userMetadata?['full_name'] ?? '',
+      'roles': ['customer', 'provider'],
+    });
     await _client.from('provider_profiles').upsert({
       'id': currentUserId,
       'business_name': businessName,
@@ -147,10 +251,6 @@ class ServiceBookingRepository implements ServiceRepository {
       'service_area': serviceArea,
       'experience_years': experienceYears,
       'is_available': available,
-    });
-    await _client.from('profiles').upsert({
-      'id': currentUserId,
-      'roles': ['customer', 'provider'],
     });
   }
 
@@ -162,38 +262,48 @@ class ServiceBookingRepository implements ServiceRepository {
     required String city,
     required String serviceArea,
   }) async {
-    if (!configured) {
-      _demoServices.add({
-        'id': _uuid.v4(),
-        'provider_id': currentUserId,
-        'category_id': categoryId,
-        'title': title,
-        'description': description,
-        'base_charge': charge,
-        'city': city,
-        'service_area': serviceArea,
-        'is_available': true,
-        'service_categories': {
-          'name':
-              _demoCategories.firstWhere((c) => c['id'] == categoryId)['name'],
-        },
-        'provider_profiles': {
-          'business_name': 'My Service',
-          'experience_years': 1,
-          'is_available': true,
-        },
-      });
+    if (_localStoreActive) {
+      _addLocalProviderService(
+        categoryId: categoryId,
+        title: title,
+        description: description,
+        charge: charge,
+        city: city,
+        serviceArea: serviceArea,
+      );
       return;
     }
-    await _client.from('provider_services').insert({
-      'provider_id': currentUserId,
-      'category_id': categoryId,
-      'title': title,
-      'description': description,
-      'base_charge': charge,
-      'city': city,
-      'service_area': serviceArea,
-    });
+    if (!_hasCurrentUser) throw Exception('Please sign in again.');
+    try {
+      await _client
+          .from('profiles')
+          .upsert({
+            'id': currentUserId,
+            'full_name': _currentUser?.userMetadata?['full_name'] ?? '',
+            'roles': ['customer', 'provider'],
+          })
+          .timeout(_requestTimeout);
+      await _client
+          .from('provider_profiles')
+          .upsert({'id': currentUserId}).timeout(_requestTimeout);
+      await _client
+          .from('provider_services')
+          .insert({
+            'provider_id': currentUserId,
+            'category_id': categoryId,
+            'title': title,
+            'description': description,
+            'base_charge': charge,
+            'city': city,
+            'service_area': serviceArea,
+          })
+          .timeout(_requestTimeout);
+    } catch (e) {
+      if (_isMissingSchemaError(e)) {
+        throw _missingBackendSchemaException();
+      }
+      rethrow;
+    }
   }
 
   Future<void> createBooking({
@@ -207,6 +317,9 @@ class ServiceBookingRepository implements ServiceRepository {
     String? serviceId,
     double? quotedCharge,
   }) async {
+    if (!_localStoreActive && !_hasCurrentUser) {
+      throw Exception('Please sign in again.');
+    }
     final booking = {
       'id': _uuid.v4(),
       'customer_id': currentUserId,
@@ -222,7 +335,7 @@ class ServiceBookingRepository implements ServiceRepository {
       'quoted_charge': quotedCharge,
       'created_at': DateTime.now().toIso8601String(),
     };
-    if (!configured) {
+    if (_localStoreActive) {
       booking['service_categories'] =
           _demoCategories.firstWhere((c) => c['id'] == categoryId);
       _demoBookings.insert(0, booking);
@@ -249,7 +362,8 @@ class ServiceBookingRepository implements ServiceRepository {
   }
 
   Future<List<Map<String, dynamic>>> bookings() async {
-    if (!configured) return List.of(_demoBookings);
+    if (_localStoreActive) return List.of(_demoBookings);
+    if (!_hasCurrentUser) return [];
     final data = await _client
         .from('booking_requests')
         .select('*, service_categories(name)')
@@ -259,22 +373,32 @@ class ServiceBookingRepository implements ServiceRepository {
   }
 
   Future<List<Map<String, dynamic>>> providerIncomingBookings() async {
-    if (!configured) return List.of(_demoBookings);
-    final data = await _client
-        .from('booking_requests')
-        .select('*, service_categories(name)')
-        .or('provider_id.eq.$currentUserId,booking_type.eq.open')
-        .order('created_at', ascending: false);
-    return List<Map<String, dynamic>>.from(data);
+    if (_localStoreActive) return List.of(_demoBookings);
+    if (!_hasCurrentUser) return [];
+    try {
+      final data = await _client
+          .from('booking_requests')
+          .select('*, service_categories(name)')
+          .or('provider_id.eq.$currentUserId,booking_type.eq.open')
+          .order('created_at', ascending: false)
+          .timeout(_requestTimeout);
+      return List<Map<String, dynamic>>.from(data);
+    } catch (e) {
+      if (_isMissingSchemaError(e)) {
+        throw _missingBackendSchemaException();
+      }
+      rethrow;
+    }
   }
 
   Future<void> updateBookingStatus(String bookingId, String status) async {
-    if (!configured) {
+    if (_localStoreActive) {
       final booking = _demoBookings.firstWhere((b) => b['id'] == bookingId);
       booking['status'] = status;
       if (status == 'accepted') booking['provider_id'] ??= currentUserId;
       return;
     }
+    if (!_hasCurrentUser) throw Exception('Please sign in again.');
     final patch = <String, dynamic>{'status': status};
     if (status == 'accepted') patch['provider_id'] = currentUserId;
     await _client.from('booking_requests').update(patch).eq('id', bookingId);
@@ -283,7 +407,8 @@ class ServiceBookingRepository implements ServiceRepository {
   Future<String?> ensureChat(Map<String, dynamic> booking) async {
     final providerId = booking['provider_id'] as String?;
     if (providerId == null || providerId.isEmpty) return null;
-    if (!configured) return booking['id'] as String;
+    if (_localStoreActive) return booking['id'] as String;
+    if (!_hasCurrentUser) throw Exception('Please sign in again.');
     final existing = await _client
         .from('chats')
         .select('id')
@@ -303,9 +428,10 @@ class ServiceBookingRepository implements ServiceRepository {
   }
 
   Future<List<Map<String, dynamic>>> messages(String chatId) async {
-    if (!configured) {
+    if (_localStoreActive) {
       return _demoMessages.where((m) => m['chat_id'] == chatId).toList();
     }
+    if (!_hasCurrentUser) return [];
     final data = await _client
         .from('chat_messages')
         .select()
@@ -315,7 +441,7 @@ class ServiceBookingRepository implements ServiceRepository {
   }
 
   Future<void> sendMessage(String chatId, String body) async {
-    if (!configured) {
+    if (_localStoreActive) {
       _demoMessages.add({
         'id': _uuid.v4(),
         'chat_id': chatId,
@@ -325,6 +451,7 @@ class ServiceBookingRepository implements ServiceRepository {
       });
       return;
     }
+    if (!_hasCurrentUser) throw Exception('Please sign in again.');
     await _client.from('chat_messages').insert({
       'chat_id': chatId,
       'sender_id': currentUserId,
@@ -339,7 +466,8 @@ class ServiceBookingRepository implements ServiceRepository {
   ) async {
     final providerId = booking['provider_id'] as String?;
     if (providerId == null) return;
-    if (!configured) return;
+    if (_localStoreActive) return;
+    if (!_hasCurrentUser) throw Exception('Please sign in again.');
     await _client.from('ratings').insert({
       'booking_id': booking['id'],
       'customer_id': currentUserId,
@@ -350,13 +478,18 @@ class ServiceBookingRepository implements ServiceRepository {
   }
 
   Future<List<Map<String, dynamic>>> notifications() async {
-    if (!configured) return List.of(_demoNotifications);
+    if (_localStoreActive) return List.of(_demoNotifications);
+    if (!_hasCurrentUser) return [];
     final data = await _client
         .from('notifications')
         .select()
         .eq('user_id', currentUserId)
         .order('created_at', ascending: false);
     return List<Map<String, dynamic>>.from(data);
+  }
+
+  String _normalizedRole(dynamic value) {
+    return value == 'provider' ? 'provider' : 'customer';
   }
 }
 

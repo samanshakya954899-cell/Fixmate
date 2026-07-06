@@ -1,8 +1,11 @@
 library fixmate_app;
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -13,6 +16,7 @@ part 'app/authentication_gate.dart';
 part 'app/viewmodels/authentication_gate_view_model.dart';
 part 'domain/repositories/service_repository.dart';
 part 'data/repositories/service_booking_repository.dart';
+part 'data/repositories/backend_service_booking_repository.dart';
 part 'features/auth/presentation/views/auth_view.dart';
 part 'features/auth/presentation/viewmodels/auth_view_model.dart';
 part 'features/home/presentation/views/role_based_home_shell.dart';
@@ -50,8 +54,10 @@ part 'core/utils/formatting_and_ui_helpers.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final configured = _supabaseUrl.isNotEmpty && _supabaseAnonKey.isNotEmpty;
-  if (configured) {
+  final backendConfigured = _backendUrl.isNotEmpty;
+  final supabaseConfigured = _supabaseUrl.isNotEmpty && _supabaseAnonKey.isNotEmpty;
+  final configured = backendConfigured || supabaseConfigured;
+  if (!backendConfigured && supabaseConfigured) {
     await Supabase.initialize(
       url: _supabaseUrl,
       publishableKey: _supabaseAnonKey,

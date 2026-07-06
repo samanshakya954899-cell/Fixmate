@@ -83,9 +83,15 @@ http://127.0.0.1:8000/admin/
 Optional settings:
 
 ```bash
+set SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+set SUPABASE_SECRET_KEY=your-server-only-supabase-secret-key
 set DJANGO_SECRET_KEY=change-me
 set DJANGO_DEBUG=1
 set DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost
 set SUPABASE_DB_PASSWORD=your-private-supabase-database-password
 set SUPABASE_DB_HOST=db.YOUR_PROJECT.supabase.co
 ```
+
+For local development, copy `.env.example` to `.env` inside this folder and fill in your private values. `.env` is ignored by Git.
+
+`SUPABASE_SECRET_KEY` is a server-only API key. The Flutter app should use `BACKEND_URL` to talk to Django, not the secret key directly.

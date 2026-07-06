@@ -43,7 +43,7 @@ class _AuthGateState extends State<AuthGate> {
         onSignOut: viewModel.handleSignOut,
       );
     }
-    if (viewModel.session == null) {
+    if (!viewModel.authenticated) {
       return AuthScreen(
         repo: viewModel.repo,
         onAuthenticated: viewModel.setLoginMode,

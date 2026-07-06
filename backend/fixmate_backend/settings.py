@@ -6,12 +6,38 @@ from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+def load_local_env():
+    env_path = BASE_DIR / ".env"
+    if not env_path.exists():
+        return
+    for raw_line in env_path.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+def supabase_db_host_from_url(url):
+    prefix = "https://"
+    suffix = ".supabase.co"
+    if url.startswith(prefix) and url.endswith(suffix):
+        project_ref = url[len(prefix) : -len(suffix)]
+        return f"db.{project_ref}.supabase.co"
+    return ""
+
+
+load_local_env()
+
 SECRET_KEY = os.environ.get(
     "DJANGO_SECRET_KEY",
     "dev-only-fixmate-secret-key-change-me",
 )
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "*").split(",")
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+SUPABASE_SECRET_KEY = os.environ.get("SUPABASE_SECRET_KEY", "")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -55,7 +81,10 @@ TEMPLATES = [
 WSGI_APPLICATION = "fixmate_backend.wsgi.application"
 
 SUPABASE_DB_PASSWORD = os.environ.get("SUPABASE_DB_PASSWORD", "")
-SUPABASE_DB_HOST = os.environ.get("SUPABASE_DB_HOST", "")
+SUPABASE_DB_HOST = os.environ.get(
+    "SUPABASE_DB_HOST",
+    supabase_db_host_from_url(SUPABASE_URL),
+)
 
 if SUPABASE_DB_PASSWORD:
     if not SUPABASE_DB_HOST:

@@ -4,6 +4,7 @@ abstract class ServiceRepository {
   bool get configured;
   String get currentUserId;
   String get currentEmail;
+  String get preferredRole;
 
   Future<void> signIn(String email, String password);
   Future<bool> signUp(
@@ -12,6 +13,7 @@ abstract class ServiceRepository {
     String password,
     String accountType,
   );
+  Future<void> rememberPreferredRole(String role);
   Future<void> resetPassword(String email);
   Future<void> signOut();
 
