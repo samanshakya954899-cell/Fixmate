@@ -8,11 +8,10 @@ class RoleBasedHomeViewModel extends ChangeNotifier {
   int index;
 
   bool get providerMode => mode == 'provider';
-  String get appName => providerMode ? 'FixSeva Provider' : 'FixSeva Customer';
+  String get appName => providerMode ? 'FixMate Provider' : 'FixMate Customer';
 
   void selectIndex(int value) {
     index = value;
     notifyListeners();
   }
 }
-

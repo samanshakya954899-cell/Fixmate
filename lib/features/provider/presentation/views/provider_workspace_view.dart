@@ -32,7 +32,7 @@ class _ProviderHomeState extends State<ProviderHome> {
       builder: (context, _) => RefreshIndicator(
         onRefresh: viewModel.refresh,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 104),
           children: [
             const AppHero(
               icon: Icons.engineering_outlined,
@@ -148,5 +148,3 @@ class _WorkspaceLoadError extends StatelessWidget {
     );
   }
 }
-
-

@@ -13,6 +13,17 @@ abstract class ServiceRepository {
     String password,
     String accountType,
   );
+  Future<bool> accountExists(String email);
+  Future<void> requestSignupOtp({
+    required String name,
+    required String companyName,
+    required String email,
+    required String password,
+    required String accountType,
+  });
+  Future<void> verifySignupOtp(String email, String code);
+  Future<void> requestSignInOtp(String email);
+  Future<void> verifySignInOtp(String email, String code);
   Future<void> rememberPreferredRole(String role);
   Future<void> resetPassword(String email);
   Future<void> signOut();
@@ -64,4 +75,3 @@ abstract class ServiceRepository {
   );
   Future<List<Map<String, dynamic>>> notifications();
 }
-

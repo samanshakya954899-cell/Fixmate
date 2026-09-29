@@ -16,17 +16,17 @@ Future<void> _openBookingRequestForm(
   return showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.white,
+    backgroundColor: const Color(0xFFF9F9FF),
     showDragHandle: true,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
     ),
     builder: (context) => Padding(
       padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        left: 20,
+        right: 20,
+        top: 12,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
       ),
       child: SingleChildScrollView(
         child: Column(
@@ -40,22 +40,31 @@ Future<void> _openBookingRequestForm(
             const SizedBox(height: 12),
             TextField(
                 controller: viewModel.issue,
+                minLines: 2,
+                maxLines: 4,
                 decoration: const InputDecoration(
-                    labelText: 'Describe the problem')),
+                    labelText: 'Describe the problem',
+                    prefixIcon: Icon(Icons.build_outlined))),
             const SizedBox(height: 8),
             TextField(
                 controller: viewModel.address,
-                decoration: const InputDecoration(labelText: 'Address')),
+                decoration: const InputDecoration(
+                    labelText: 'Address',
+                    prefixIcon: Icon(Icons.location_on_outlined))),
             const SizedBox(height: 8),
             TextField(
                 controller: viewModel.city,
-                decoration: const InputDecoration(labelText: 'City')),
+                decoration: const InputDecoration(
+                    labelText: 'City',
+                    prefixIcon: Icon(Icons.location_city_outlined))),
             const SizedBox(height: 8),
             TextField(
               controller: viewModel.preferred,
               readOnly: true,
-              decoration:
-                  const InputDecoration(labelText: 'Preferred date/time'),
+              decoration: const InputDecoration(
+                labelText: 'Preferred date/time',
+                prefixIcon: Icon(Icons.event_outlined),
+              ),
               onTap: () async {
                 final date = await showDatePicker(
                   context: context,
@@ -94,5 +103,3 @@ Future<void> _openBookingRequestForm(
     ),
   ).whenComplete(viewModel.dispose);
 }
-
-

@@ -29,35 +29,33 @@ class _AuthGateState extends State<AuthGate> {
     return AnimatedBuilder(
       animation: viewModel,
       builder: (context, _) {
-    if (!viewModel.configured && !viewModel.guestLoggedIn) {
-      return AuthScreen(
-        repo: viewModel.repo,
-        onAuthenticated: viewModel.setLoginMode,
-      );
-    }
-    if (!viewModel.configured) {
-      return HomeShell(
-        repo: viewModel.repo,
-        mode: viewModel.loginMode,
-        initialIndex: viewModel.initialIndex,
-        onSignOut: viewModel.handleSignOut,
-      );
-    }
-    if (!viewModel.authenticated) {
-      return AuthScreen(
-        repo: viewModel.repo,
-        onAuthenticated: viewModel.setLoginMode,
-      );
-    }
-    return HomeShell(
-      repo: viewModel.repo,
-      mode: viewModel.loginMode,
-      initialIndex: viewModel.initialIndex,
-      onSignOut: viewModel.handleSignOut,
-    );
+        if (!viewModel.configured && !viewModel.guestLoggedIn) {
+          return AuthScreen(
+            repo: viewModel.repo,
+            onAuthenticated: viewModel.setLoginMode,
+          );
+        }
+        if (!viewModel.configured) {
+          return HomeShell(
+            repo: viewModel.repo,
+            mode: viewModel.loginMode,
+            initialIndex: viewModel.initialIndex,
+            onSignOut: viewModel.handleSignOut,
+          );
+        }
+        if (!viewModel.authenticated) {
+          return AuthScreen(
+            repo: viewModel.repo,
+            onAuthenticated: viewModel.setLoginMode,
+          );
+        }
+        return HomeShell(
+          repo: viewModel.repo,
+          mode: viewModel.loginMode,
+          initialIndex: viewModel.initialIndex,
+          onSignOut: viewModel.handleSignOut,
+        );
       },
     );
   }
 }
-
-

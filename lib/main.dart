@@ -2,13 +2,18 @@ library fixmate_app;
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui' show ImageFilter;
 
+import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
+
+import 'core/network/http_client_factory.dart';
 
 part 'core/constants/app_config_and_theme.dart';
 part 'app/fixseva_app.dart';
@@ -37,6 +42,7 @@ part 'features/profile/presentation/viewmodels/user_profile_view_model.dart';
 part 'features/notifications/presentation/views/notifications_view.dart';
 part 'features/notifications/presentation/viewmodels/notifications_view_model.dart';
 part 'shared/widgets/app_hero.dart';
+part 'shared/widgets/app_surfaces.dart';
 part 'shared/widgets/section_title.dart';
 part 'shared/widgets/info_chip.dart';
 part 'shared/widgets/icon_line.dart';
@@ -55,7 +61,8 @@ part 'core/utils/formatting_and_ui_helpers.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final backendConfigured = _backendUrl.isNotEmpty;
-  final supabaseConfigured = _supabaseUrl.isNotEmpty && _supabaseAnonKey.isNotEmpty;
+  final supabaseConfigured =
+      _supabaseUrl.isNotEmpty && _supabaseAnonKey.isNotEmpty;
   final configured = backendConfigured || supabaseConfigured;
   if (!backendConfigured && supabaseConfigured) {
     await Supabase.initialize(

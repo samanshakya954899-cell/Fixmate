@@ -11,12 +11,22 @@ class InfoBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF3EF),
-        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFF7F3), Color(0xFFFFEEE7)],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x16FF8A5B),
+            blurRadius: 16,
+            offset: Offset(0, 7),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          Icon(icon, color: _accentColor),
+          SoftIconTile(icon: icon, color: _accentColor, size: 38),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -32,4 +42,3 @@ class InfoBanner extends StatelessWidget {
     );
   }
 }
-

@@ -9,7 +9,21 @@ class SectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Container(
+          width: 5,
+          height: 38,
+          margin: const EdgeInsets.only(top: 2, right: 11),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [_primaryColor, _lavenderColor],
+            ),
+            borderRadius: BorderRadius.circular(99),
+          ),
+        ),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -30,4 +44,3 @@ class SectionTitle extends StatelessWidget {
     );
   }
 }
-

@@ -18,15 +18,7 @@ class EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: const Color(0xFFEAF5F4),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Icon(icon, color: _primaryColor, size: 30),
-            ),
+            SoftIconTile(icon: icon, size: 68),
             const SizedBox(height: 12),
             Text(
               text,
@@ -42,4 +34,3 @@ class EmptyState extends StatelessWidget {
     );
   }
 }
-

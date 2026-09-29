@@ -97,13 +97,14 @@ class _HomeShellState extends State<HomeShell> {
               ];
 
         return Scaffold(
+          extendBody: true,
           appBar: AppBar(
             flexibleSpace: const DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [_primaryColor, Color(0xFF12455A)],
+                  colors: [_navyColor, _primaryColor],
                 ),
               ),
             ),
@@ -120,10 +121,29 @@ class _HomeShellState extends State<HomeShell> {
                   child: const Icon(Icons.home_repair_service, size: 23),
                 ),
                 const SizedBox(width: 12),
+                const Text('FixMate'),
+                const SizedBox(width: 9),
                 Flexible(
-                  child: Text(
-                    viewModel.appName,
-                    overflow: TextOverflow.ellipsis,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: .14),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: .18),
+                      ),
+                    ),
+                    child: Text(
+                      viewModel.providerMode ? 'Provider' : 'Customer',
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: .2,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -148,24 +168,29 @@ class _HomeShellState extends State<HomeShell> {
               ),
             ],
           ),
-          body: pages[viewModel.index],
-          bottomNavigationBar: Container(
-            decoration: const BoxDecoration(
-              color: _surfaceColor,
-              border: Border(top: BorderSide(color: Color(0xFFE4EAF0))),
-              boxShadow: [
-                BoxShadow(
-                  color: Color(0x140E7C7B),
-                  blurRadius: 18,
-                  offset: Offset(0, -8),
+          body: AppBackdrop(child: pages[viewModel.index]),
+          bottomNavigationBar: ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Color(0xD9FFFFFF),
+                  border: Border(top: BorderSide(color: Color(0xB3FFFFFF))),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0x185B5CE2),
+                      blurRadius: 24,
+                      offset: Offset(0, -8),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: NavigationBar(
-              height: 78,
-              selectedIndex: viewModel.index,
-              onDestinationSelected: viewModel.selectIndex,
-              destinations: destinations,
+                child: NavigationBar(
+                  height: 78,
+                  selectedIndex: viewModel.index,
+                  onDestinationSelected: viewModel.selectIndex,
+                  destinations: destinations,
+                ),
+              ),
             ),
           ),
         );

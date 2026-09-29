@@ -1,77 +1,154 @@
 part of fixmate_app;
 
+enum AuthFlowStep { email, credentials, otp }
+
 class AuthViewModel extends ChangeNotifier {
   AuthViewModel(this._repo);
 
   final ServiceRepository _repo;
 
   final name = TextEditingController();
+  final companyName = TextEditingController();
   final email = TextEditingController();
   final password = TextEditingController();
+  final otp = TextEditingController();
 
+  AuthFlowStep step = AuthFlowStep.email;
   String loginMode = 'customer';
-  bool signup = false;
+  bool accountFound = false;
+  bool obscurePassword = true;
   bool busy = false;
-  DateTime? _emailRetryAt;
+  int resendSeconds = 0;
+  Timer? _resendTimer;
+
+  bool get isSignup => !accountFound;
 
   void setLoginMode(String value) {
     loginMode = value;
     notifyListeners();
   }
 
-  void toggleSignup() {
-    signup = !signup;
+  void togglePasswordVisibility() {
+    obscurePassword = !obscurePassword;
     notifyListeners();
   }
 
-  Future<AuthResult> submit() async {
-    if (busy) return const AuthResult();
-    if (email.text.trim().isEmpty || password.text.isEmpty) {
-      return const AuthResult(message: 'Enter your email and password.');
-    }
-    if (signup && name.text.trim().isEmpty) {
-      return const AuthResult(message: 'Enter your full name.');
-    }
-    final waitMessage = _emailRateLimitMessage();
-    if (waitMessage != null && signup) {
-      return AuthResult(message: waitMessage);
-    }
+  void changeEmail() {
+    _resendTimer?.cancel();
+    step = AuthFlowStep.email;
+    accountFound = false;
+    otp.clear();
+    resendSeconds = 0;
+    notifyListeners();
+  }
 
+  Future<AuthResult> continueWithEmail() async {
+    if (busy) return const AuthResult();
+    final normalizedEmail = email.text.trim().toLowerCase();
+    if (!_looksLikeEmail(normalizedEmail)) {
+      return const AuthResult(message: 'Enter a valid email address.');
+    }
     busy = true;
     notifyListeners();
     try {
-      if (!_repo.configured) {
-        if (signup) {
-          return const AuthResult(
-            message:
-                'Connect Supabase to create secure accounts and save login details.',
-          );
-        }
-        return AuthResult(authenticatedMode: loginMode);
-      }
-      if (signup) {
-        final hasSession = await _repo.signUp(
-          name.text.trim(),
-          email.text.trim(),
-          password.text,
-          loginMode,
-        );
-        if (!hasSession) {
-          return const AuthResult(
-            message:
-                'Account created. Please check your email to confirm it before logging in.',
-          );
-        }
-        return AuthResult(
-          authenticatedMode: loginMode,
-          message: 'Account created successfully.',
-        );
-      }
-      await _repo.signIn(email.text.trim(), password.text);
+      accountFound = await _repo.accountExists(normalizedEmail);
+      step = AuthFlowStep.credentials;
+      return const AuthResult();
+    } catch (error) {
+      return AuthResult(message: _friendlyAuthError(error));
+    } finally {
+      busy = false;
+      notifyListeners();
+    }
+  }
+
+  Future<AuthResult> signInWithPassword() async {
+    if (busy) return const AuthResult();
+    if (password.text.isEmpty) {
+      return const AuthResult(message: 'Enter your password.');
+    }
+    busy = true;
+    notifyListeners();
+    try {
+      await _repo.signIn(email.text.trim().toLowerCase(), password.text);
       await _repo.rememberPreferredRole(loginMode);
       return AuthResult(authenticatedMode: loginMode);
-    } catch (e) {
-      return AuthResult(message: _friendlyAuthError(e));
+    } catch (error) {
+      return AuthResult(message: _friendlyAuthError(error));
+    } finally {
+      busy = false;
+      notifyListeners();
+    }
+  }
+
+  Future<AuthResult> sendOtp() async {
+    if (busy) return const AuthResult();
+    if (resendSeconds > 0) {
+      return AuthResult(
+        message: 'Please wait $resendSeconds seconds before resending.',
+      );
+    }
+    if (isSignup) {
+      if (name.text.trim().isEmpty) {
+        return const AuthResult(message: 'Enter your full name.');
+      }
+      if (password.text.length < 8) {
+        return const AuthResult(
+          message: 'Create a password with at least 8 characters.',
+        );
+      }
+    }
+    busy = true;
+    notifyListeners();
+    try {
+      final normalizedEmail = email.text.trim().toLowerCase();
+      if (isSignup) {
+        await _repo.requestSignupOtp(
+          name: name.text.trim(),
+          companyName: companyName.text.trim(),
+          email: normalizedEmail,
+          password: password.text,
+          accountType: loginMode,
+        );
+      } else {
+        await _repo.requestSignInOtp(normalizedEmail);
+      }
+      otp.clear();
+      step = AuthFlowStep.otp;
+      _startResendTimer();
+      return const AuthResult(message: 'Verification code sent to your email.');
+    } catch (error) {
+      return AuthResult(message: _friendlyAuthError(error));
+    } finally {
+      busy = false;
+      notifyListeners();
+    }
+  }
+
+  Future<AuthResult> verifyOtp() async {
+    if (busy) return const AuthResult();
+    final code = otp.text.trim();
+    if (!RegExp(r'^\d{6}$').hasMatch(code)) {
+      return const AuthResult(message: 'Enter the 6-digit verification code.');
+    }
+    busy = true;
+    notifyListeners();
+    try {
+      final normalizedEmail = email.text.trim().toLowerCase();
+      if (isSignup) {
+        await _repo.verifySignupOtp(normalizedEmail, code);
+      } else {
+        await _repo.verifySignInOtp(normalizedEmail, code);
+        await _repo.rememberPreferredRole(loginMode);
+      }
+      return AuthResult(
+        authenticatedMode: loginMode,
+        message: isSignup
+            ? 'Email verified. Your account is ready.'
+            : 'Signed in successfully.',
+      );
+    } catch (error) {
+      return AuthResult(message: _friendlyAuthError(error));
     } finally {
       busy = false;
       notifyListeners();
@@ -80,64 +157,59 @@ class AuthViewModel extends ChangeNotifier {
 
   Future<String?> resetPassword() async {
     if (busy) return null;
-    if (email.text.trim().isEmpty) {
-      return 'Enter your email to reset your password.';
-    }
-    if (!_repo.configured) {
-      return 'Password reset email is available after Supabase is configured.';
-    }
-    final waitMessage = _emailRateLimitMessage();
-    if (waitMessage != null) return waitMessage;
     busy = true;
     notifyListeners();
     try {
-      await _repo.resetPassword(email.text.trim());
+      await _repo.resetPassword(email.text.trim().toLowerCase());
       return 'Password reset email sent.';
-    } catch (e) {
-      return _friendlyAuthError(e);
+    } catch (error) {
+      return _friendlyAuthError(error);
     } finally {
       busy = false;
       notifyListeners();
     }
   }
 
-  String? _emailRateLimitMessage() {
-    final retryAt = _emailRetryAt;
-    if (retryAt == null) return null;
-    final wait = retryAt.difference(DateTime.now());
-    if (wait.isNegative) {
-      _emailRetryAt = null;
-      return null;
-    }
-    final minutes = wait.inMinutes + 1;
-    return 'Too many emails were requested. Please wait about $minutes minute${minutes == 1 ? '' : 's'} and try again.';
+  void _startResendTimer() {
+    _resendTimer?.cancel();
+    resendSeconds = 60;
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (resendSeconds <= 1) {
+        resendSeconds = 0;
+        timer.cancel();
+      } else {
+        resendSeconds -= 1;
+      }
+      notifyListeners();
+    });
+  }
+
+  bool _looksLikeEmail(String value) {
+    return RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(value);
   }
 
   String _friendlyAuthError(Object error) {
-    final message = error.toString();
-    if (message.contains('over_email_send_rate_limit') ||
-        message.contains('email rate limit exceeded') ||
-        message.contains('statusCode: 429')) {
-      _emailRetryAt = DateTime.now().add(const Duration(minutes: 10));
-      return 'Supabase has temporarily blocked more auth emails for this project. Please wait a few minutes, then try again.';
-    }
-    if (message.contains('Invalid login credentials')) {
+    final message = error.toString().replaceFirst('Exception: ', '');
+    if (message.contains('Invalid login credentials') ||
+        message.contains('Invalid email or password')) {
       return 'Invalid email or password.';
     }
-    if (message.contains('User already registered')) {
-      return 'This email is already registered. Log in instead.';
+    if (message.contains('SocketException') ||
+        message.contains('Failed to fetch') ||
+        message.contains('TimeoutException')) {
+      return 'Unable to connect to the server. Please try again.';
     }
-    if (message.contains('Email not confirmed')) {
-      return 'Account created, but Supabase email confirmation is enabled. Confirm your email or turn off email confirmation for testing.';
-    }
-    return message.replaceFirst('Exception: ', '');
+    return message;
   }
 
   @override
   void dispose() {
+    _resendTimer?.cancel();
     name.dispose();
+    companyName.dispose();
     email.dispose();
     password.dispose();
+    otp.dispose();
     super.dispose();
   }
 }
@@ -148,4 +220,3 @@ class AuthResult {
   final String? message;
   final String? authenticatedMode;
 }
-

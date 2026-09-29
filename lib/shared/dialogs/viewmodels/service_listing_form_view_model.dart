@@ -5,7 +5,6 @@ class ServiceListingFormViewModel extends ChangeNotifier {
 
   final ServiceRepository _repo;
 
-  final title = TextEditingController();
   final description = TextEditingController();
   final charge = TextEditingController();
   final city = TextEditingController();
@@ -57,11 +56,6 @@ class ServiceListingFormViewModel extends ChangeNotifier {
       _notify();
       return false;
     }
-    if (title.text.trim().isEmpty) {
-      errorMessage = 'Enter a service title.';
-      _notify();
-      return false;
-    }
     if (description.text.trim().isEmpty) {
       errorMessage = 'Enter a short service description.';
       _notify();
@@ -87,9 +81,12 @@ class ServiceListingFormViewModel extends ChangeNotifier {
     errorMessage = null;
     _notify();
     try {
+      final selectedCategory = categories.firstWhere(
+        (category) => category['id'] == selectedCategoryId,
+      );
       await _repo.addProviderService(
         categoryId: selectedCategoryId,
-        title: title.text.trim(),
+        title: selectedCategory['name']?.toString() ?? 'Service',
         description: description.text.trim(),
         charge: parsedCharge,
         city: city.text.trim(),
@@ -136,7 +133,6 @@ class ServiceListingFormViewModel extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
-    title.dispose();
     description.dispose();
     charge.dispose();
     city.dispose();
@@ -144,4 +140,3 @@ class ServiceListingFormViewModel extends ChangeNotifier {
     super.dispose();
   }
 }
-

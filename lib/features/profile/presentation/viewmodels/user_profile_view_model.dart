@@ -57,4 +57,3 @@ class UserProfileViewModel extends ChangeNotifier {
     super.dispose();
   }
 }
-

@@ -42,9 +42,6 @@ Color _statusColor(String status) {
   }
 }
 
-String _modeLabel(String mode) => mode == 'provider' ? 'Provider' : 'Customer';
-
 void _snack(BuildContext context, String message) {
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 }
-

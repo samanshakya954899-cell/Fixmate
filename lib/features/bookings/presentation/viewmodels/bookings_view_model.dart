@@ -18,4 +18,3 @@ class BookingsViewModel extends ChangeNotifier {
 
   Future<void> refresh() => load();
 }
-

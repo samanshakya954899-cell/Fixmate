@@ -11,8 +11,9 @@ class StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: .11),
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: .18)),
       ),
       child: Text(
         status.replaceAll('_', ' ').toUpperCase(),
@@ -25,4 +26,3 @@ class StatusBadge extends StatelessWidget {
     );
   }
 }
-

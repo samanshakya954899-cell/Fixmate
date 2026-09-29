@@ -50,4 +50,3 @@ class AuthenticationGateViewModel extends ChangeNotifier {
     super.dispose();
   }
 }
-

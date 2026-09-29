@@ -19,27 +19,16 @@ class ServiceListingCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFFE6F6F5), Color(0xFFFFF3EF)],
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    _iconFor(service['icon_name'] ?? category['icon_name']),
-                    color: _primaryColor,
+                SoftIconTile(
+                  icon: _iconFor(
+                    service['icon_name'] ?? category['icon_name'],
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -66,8 +55,18 @@ class ServiceListingCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFF3EF),
-                    borderRadius: BorderRadius.circular(10),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFFF4EF), Color(0xFFFFE8DD)],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x1FFF8A5B),
+                        blurRadius: 14,
+                        offset: Offset(0, 6),
+                      ),
+                    ],
                   ),
                   child: Text(
                     'Rs ${service['base_charge'] ?? 0}',
@@ -123,4 +122,3 @@ class ServiceListingCard extends StatelessWidget {
     );
   }
 }
-

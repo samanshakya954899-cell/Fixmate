@@ -42,7 +42,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return AnimatedBuilder(
       animation: viewModel,
       builder: (context, _) => ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 104),
         children: [
           AppHero(
             icon: Icons.account_circle_outlined,

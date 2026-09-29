@@ -26,29 +26,14 @@ class BookingCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFFE6F6F5), Color(0xFFFFF3EF)],
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.handyman_outlined,
-                    color: _primaryColor,
-                  ),
-                ),
+                const SoftIconTile(icon: Icons.handyman_outlined),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -169,5 +154,3 @@ class BookingCard extends StatelessWidget {
     );
   }
 }
-
-

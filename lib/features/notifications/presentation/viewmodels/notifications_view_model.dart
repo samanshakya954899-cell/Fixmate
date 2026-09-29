@@ -16,4 +16,3 @@ class NotificationsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 }
-

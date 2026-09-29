@@ -34,4 +34,3 @@ class BookingChatViewModel extends ChangeNotifier {
     super.dispose();
   }
 }
-

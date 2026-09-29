@@ -21,4 +21,3 @@ class BookingRequestCardViewModel {
 
   Future<String?> ensureChat() => repo.ensureChat(booking);
 }
-

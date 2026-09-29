@@ -25,4 +25,3 @@ class BookingRatingViewModel extends ChangeNotifier {
     super.dispose();
   }
 }
-

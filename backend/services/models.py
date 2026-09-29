@@ -2,6 +2,37 @@ import uuid
 
 from django.contrib.auth.models import User
 from django.db import models
+from django.utils import timezone
+
+
+class EmailOtpChallenge(models.Model):
+    SIGNUP = "signup"
+    SIGNIN = "signin"
+    PURPOSE_CHOICES = ((SIGNUP, "Sign up"), (SIGNIN, "Sign in"))
+
+    email = models.EmailField()
+    purpose = models.CharField(max_length=20, choices=PURPOSE_CHOICES)
+    code_hash = models.CharField(max_length=255)
+    password_hash = models.CharField(max_length=255, blank=True)
+    full_name = models.CharField(max_length=255, blank=True)
+    company_name = models.CharField(max_length=255, blank=True)
+    account_type = models.CharField(max_length=20, default="customer")
+    attempts = models.PositiveSmallIntegerField(default=0)
+    expires_at = models.DateTimeField()
+    last_sent_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["email", "purpose"],
+                name="unique_email_otp_purpose",
+            )
+        ]
+
+    @property
+    def expired(self):
+        return timezone.now() >= self.expires_at
 
 
 class Profile(models.Model):

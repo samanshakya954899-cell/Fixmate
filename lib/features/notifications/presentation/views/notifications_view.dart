@@ -29,7 +29,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Notifications')),
-      body: AnimatedBuilder(
+      body: AppBackdrop(
+          child: AnimatedBuilder(
         animation: viewModel,
         builder: (context, _) {
           if (viewModel.loading) {
@@ -50,17 +51,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     horizontal: 16,
                     vertical: 10,
                   ),
-                  leading: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEAF5F4),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Icon(
-                      Icons.notifications_active_outlined,
-                      color: _primaryColor,
-                    ),
+                  leading: const SoftIconTile(
+                    icon: Icons.notifications_active_outlined,
+                    size: 44,
                   ),
                   title: Text(item['title'] ?? ''),
                   subtitle: Text(item['body'] ?? ''),
@@ -69,9 +62,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             },
           );
         },
-      ),
+      )),
     );
   }
 }
-
-

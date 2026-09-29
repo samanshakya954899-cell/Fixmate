@@ -16,25 +16,13 @@ class FormPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(22),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
               children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFFE6F6F5), Color(0xFFFFF3EF)],
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(icon, color: _primaryColor),
-                ),
+                SoftIconTile(icon: icon, size: 44),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -52,4 +40,3 @@ class FormPanel extends StatelessWidget {
     );
   }
 }
-

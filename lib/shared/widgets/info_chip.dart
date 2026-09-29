@@ -11,8 +11,9 @@ class InfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: const Color(0xFFEAF5F4),
+        color: const Color(0xFFF0F0FA),
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFFE5E5F2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -32,4 +33,3 @@ class InfoChip extends StatelessWidget {
     );
   }
 }
-

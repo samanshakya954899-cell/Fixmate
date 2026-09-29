@@ -39,7 +39,8 @@ class ProviderWorkspaceViewModel extends ChangeNotifier {
       final allServices = await _repo.providerServices();
       services = allServices
           .where((service) =>
-              !_repo.configured || service['provider_id'] == _repo.currentUserId)
+              !_repo.configured ||
+              service['provider_id'] == _repo.currentUserId)
           .toList();
     } catch (e) {
       services = [];

@@ -36,27 +36,25 @@ class _BookingsScreenState extends State<BookingsScreen> {
             : viewModel.bookings.isEmpty
                 ? const EmptyState(text: 'Your bookings will appear here.')
                 : ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              const AppHero(
-                icon: Icons.receipt_long_outlined,
-                title: 'Bookings',
-                subtitle:
-                    'Manage service request status, chat, and ratings here.',
-              ),
-              const SizedBox(height: 16),
-              for (final booking in viewModel.bookings)
-                BookingCard(
-                  booking: booking,
-                  repo: widget.repo,
-                  showProviderActions: false,
-                  onChanged: viewModel.load,
-                ),
-            ],
-          ),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 104),
+                    children: [
+                      const AppHero(
+                        icon: Icons.receipt_long_outlined,
+                        title: 'Bookings',
+                        subtitle:
+                            'Manage service request status, chat, and ratings here.',
+                      ),
+                      const SizedBox(height: 16),
+                      for (final booking in viewModel.bookings)
+                        BookingCard(
+                          booking: booking,
+                          repo: widget.repo,
+                          showProviderActions: false,
+                          onChanged: viewModel.load,
+                        ),
+                    ],
+                  ),
       ),
     );
   }
 }
-
-

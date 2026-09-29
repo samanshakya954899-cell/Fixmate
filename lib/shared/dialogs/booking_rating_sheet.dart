@@ -8,15 +8,15 @@ Future<void> _openBookingRatingSheet(
   final viewModel = BookingRatingViewModel(repo: repo, booking: booking);
   await showModalBottomSheet(
     context: context,
-    backgroundColor: Colors.white,
+    backgroundColor: const Color(0xFFF9F9FF),
     showDragHandle: true,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
     ),
     builder: (context) => AnimatedBuilder(
       animation: viewModel,
       builder: (context, _) => Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -37,8 +37,14 @@ Future<void> _openBookingRatingSheet(
             ),
             const SizedBox(height: 8),
             TextField(
-                controller: viewModel.review,
-                decoration: const InputDecoration(labelText: 'Review')),
+              controller: viewModel.review,
+              minLines: 2,
+              maxLines: 4,
+              decoration: const InputDecoration(
+                labelText: 'Review',
+                prefixIcon: Icon(Icons.rate_review_outlined),
+              ),
+            ),
             const SizedBox(height: 12),
             FilledButton.icon(
               onPressed: () async {
@@ -57,5 +63,3 @@ Future<void> _openBookingRatingSheet(
     ),
   ).whenComplete(viewModel.dispose);
 }
-
-

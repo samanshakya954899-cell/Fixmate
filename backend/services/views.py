@@ -1,12 +1,21 @@
 import json
+import secrets
 from decimal import Decimal
+from datetime import timedelta
 from functools import wraps
 
+from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
+from django.db import transaction
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -15,6 +24,7 @@ from .models import (
     BookingRequest,
     Chat,
     ChatMessage,
+    EmailOtpChallenge,
     Notification,
     Profile,
     ProviderProfile,
@@ -65,6 +75,205 @@ def current_provider(request):
 @require_http_methods(["GET"])
 def health(request):
     return JsonResponse({"ok": True, "service": "fixmate-backend"})
+
+
+def normalized_email(data):
+    return data.get("email", "").strip().lower()
+
+
+def otp_cooldown_response(challenge):
+    elapsed = (timezone.now() - challenge.last_sent_at).total_seconds()
+    remaining = settings.OTP_RESEND_SECONDS - int(elapsed)
+    if remaining > 0:
+        return JsonResponse(
+            {
+                "error": f"Please wait {remaining} seconds before requesting another code.",
+                "retry_after": remaining,
+            },
+            status=429,
+        )
+    return None
+
+
+def create_and_send_otp(email, purpose, **details):
+    existing = EmailOtpChallenge.objects.filter(
+        email=email,
+        purpose=purpose,
+    ).first()
+    if existing:
+        cooldown = otp_cooldown_response(existing)
+        if cooldown:
+            return cooldown
+
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    challenge, _ = EmailOtpChallenge.objects.update_or_create(
+        email=email,
+        purpose=purpose,
+        defaults={
+            "code_hash": make_password(code),
+            "password_hash": details.get("password_hash", ""),
+            "full_name": details.get("full_name", ""),
+            "company_name": details.get("company_name", ""),
+            "account_type": details.get("account_type", Profile.CUSTOMER),
+            "attempts": 0,
+            "expires_at": timezone.now()
+            + timedelta(minutes=settings.OTP_EXPIRY_MINUTES),
+        },
+    )
+    try:
+        send_mail(
+            "Your FixMate verification code",
+            (
+                f"Your FixMate verification code is {code}.\n\n"
+                f"It expires in {settings.OTP_EXPIRY_MINUTES} minutes. "
+                "Do not share this code with anyone."
+            ),
+            settings.DEFAULT_FROM_EMAIL,
+            [email],
+            fail_silently=False,
+        )
+    except Exception:
+        challenge.delete()
+        return error(
+            "Unable to send the verification email. Check the server email settings.",
+            status=503,
+        )
+    return JsonResponse(
+        {
+            "ok": True,
+            "message": "Verification code sent.",
+            "expires_in": settings.OTP_EXPIRY_MINUTES * 60,
+            "resend_after": settings.OTP_RESEND_SECONDS,
+        }
+    )
+
+
+def checked_challenge(email, purpose, code):
+    challenge = EmailOtpChallenge.objects.filter(
+        email=email,
+        purpose=purpose,
+    ).first()
+    if challenge is None:
+        return None, error("Request a new verification code.", status=400)
+    if challenge.expired:
+        challenge.delete()
+        return None, error("This verification code has expired. Request a new one.")
+    if challenge.attempts >= 5:
+        challenge.delete()
+        return None, error("Too many incorrect attempts. Request a new code.", status=429)
+    if not code or not check_password(code, challenge.code_hash):
+        challenge.attempts += 1
+        challenge.save(update_fields=["attempts"])
+        return None, error("Incorrect verification code.")
+    return challenge, None
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def account_status(request):
+    email = normalized_email(read_json(request))
+    if not email:
+        return error("Enter your email address.")
+    return JsonResponse({"exists": User.objects.filter(username=email).exists()})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def request_signup_otp(request):
+    data = read_json(request)
+    email = normalized_email(data)
+    password = data.get("password", "")
+    full_name = data.get("name", "").strip()
+    company_name = data.get("company_name", "").strip()
+    account_type = data.get("account_type", Profile.CUSTOMER)
+    if not email or not full_name:
+        return error("Email and full name are required.")
+    if User.objects.filter(username=email).exists():
+        return error("A user with this email already exists.", status=409)
+    if account_type not in (Profile.CUSTOMER, Profile.PROVIDER):
+        account_type = Profile.CUSTOMER
+    try:
+        validate_password(password)
+    except ValidationError as validation_error:
+        return error(" ".join(validation_error.messages))
+    return create_and_send_otp(
+        email,
+        EmailOtpChallenge.SIGNUP,
+        password_hash=make_password(password),
+        full_name=full_name,
+        company_name=company_name,
+        account_type=account_type,
+    )
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def verify_signup_otp(request):
+    data = read_json(request)
+    email = normalized_email(data)
+    challenge, challenge_error = checked_challenge(
+        email,
+        EmailOtpChallenge.SIGNUP,
+        str(data.get("code", "")).strip(),
+    )
+    if challenge_error:
+        return challenge_error
+    if User.objects.filter(username=email).exists():
+        challenge.delete()
+        return error("A user with this email already exists.", status=409)
+
+    with transaction.atomic():
+        user = User(
+            username=email,
+            email=email,
+            first_name=challenge.full_name,
+            password=challenge.password_hash,
+        )
+        user.save()
+        profile = user.profile
+        profile.full_name = challenge.full_name
+        roles = [Profile.CUSTOMER]
+        if challenge.account_type == Profile.PROVIDER:
+            roles.append(Profile.PROVIDER)
+            ProviderProfile.objects.create(
+                profile=profile,
+                business_name=challenge.company_name,
+            )
+        profile.roles = roles
+        profile.save()
+        challenge.delete()
+        login(request, user)
+    return JsonResponse({"user": profile_to_dict(profile)}, status=201)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def request_signin_otp(request):
+    email = normalized_email(read_json(request))
+    if not User.objects.filter(username=email, is_active=True).exists():
+        return error("No account was found for this email.", status=404)
+    return create_and_send_otp(email, EmailOtpChallenge.SIGNIN)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def verify_signin_otp(request):
+    data = read_json(request)
+    email = normalized_email(data)
+    challenge, challenge_error = checked_challenge(
+        email,
+        EmailOtpChallenge.SIGNIN,
+        str(data.get("code", "")).strip(),
+    )
+    if challenge_error:
+        return challenge_error
+    user = User.objects.filter(username=email, is_active=True).first()
+    if user is None:
+        challenge.delete()
+        return error("No active account was found for this email.", status=404)
+    challenge.delete()
+    login(request, user)
+    return JsonResponse({"user": profile_to_dict(user.profile)})
 
 
 @csrf_exempt

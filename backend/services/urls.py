@@ -5,6 +5,11 @@ from . import views
 
 urlpatterns = [
     path("health/", views.health, name="health"),
+    path("auth/account-status/", views.account_status, name="account-status"),
+    path("auth/signup/request-otp/", views.request_signup_otp, name="request-signup-otp"),
+    path("auth/signup/verify-otp/", views.verify_signup_otp, name="verify-signup-otp"),
+    path("auth/signin/request-otp/", views.request_signin_otp, name="request-signin-otp"),
+    path("auth/signin/verify-otp/", views.verify_signin_otp, name="verify-signin-otp"),
     path("auth/signup/", views.signup, name="signup"),
     path("auth/signin/", views.signin, name="signin"),
     path("auth/signout/", views.signout, name="signout"),

@@ -5,7 +5,7 @@ class BackendServiceBookingRepository implements ServiceRepository {
       : _baseUri = Uri.parse(baseUrl.endsWith('/') ? baseUrl : '$baseUrl/');
 
   final Uri _baseUri;
-  final http.Client _http = http.Client();
+  final http.Client _http = createHttpClient();
   String? _cookie;
   Map<String, dynamic>? _user;
   String _preferredRole = 'customer';
@@ -57,13 +57,75 @@ class BackendServiceBookingRepository implements ServiceRepository {
   }
 
   @override
+  Future<bool> accountExists(String email) async {
+    final response = await _request(
+      'api/auth/account-status/',
+      method: 'POST',
+      body: {'email': email},
+    );
+    return response['exists'] == true;
+  }
+
+  @override
+  Future<void> requestSignupOtp({
+    required String name,
+    required String companyName,
+    required String email,
+    required String password,
+    required String accountType,
+  }) async {
+    await _request(
+      'api/auth/signup/request-otp/',
+      method: 'POST',
+      body: {
+        'name': name,
+        'company_name': companyName,
+        'email': email,
+        'password': password,
+        'account_type': _normalizedRole(accountType),
+      },
+    );
+    _preferredRole = _normalizedRole(accountType);
+  }
+
+  @override
+  Future<void> verifySignupOtp(String email, String code) async {
+    final response = await _request(
+      'api/auth/signup/verify-otp/',
+      method: 'POST',
+      body: {'email': email, 'code': code},
+    );
+    _user = Map<String, dynamic>.from(response['user'] as Map);
+  }
+
+  @override
+  Future<void> requestSignInOtp(String email) async {
+    await _request(
+      'api/auth/signin/request-otp/',
+      method: 'POST',
+      body: {'email': email},
+    );
+  }
+
+  @override
+  Future<void> verifySignInOtp(String email, String code) async {
+    final response = await _request(
+      'api/auth/signin/verify-otp/',
+      method: 'POST',
+      body: {'email': email, 'code': code},
+    );
+    _user = Map<String, dynamic>.from(response['user'] as Map);
+  }
+
+  @override
   Future<void> rememberPreferredRole(String role) async {
     _preferredRole = _normalizedRole(role);
   }
 
   @override
   Future<void> resetPassword(String email) async {
-    throw Exception('Password reset is not available on the Django backend yet.');
+    throw Exception(
+        'Password reset is not available on the Django backend yet.');
   }
 
   @override
@@ -259,7 +321,7 @@ class BackendServiceBookingRepository implements ServiceRepository {
     final headers = <String, String>{
       'Accept': 'application/json',
       if (body != null) 'Content-Type': 'application/json',
-      if (_cookie != null) 'Cookie': _cookie!,
+      if (!managesCookiesAutomatically && _cookie != null) 'Cookie': _cookie!,
     };
     final encodedBody = body == null ? null : jsonEncode(body);
     late final http.Response response;
@@ -276,7 +338,8 @@ class BackendServiceBookingRepository implements ServiceRepository {
           .patch(uri, headers: headers, body: encodedBody)
           .timeout(_requestTimeout);
     } else {
-      response = await _http.get(uri, headers: headers).timeout(_requestTimeout);
+      response =
+          await _http.get(uri, headers: headers).timeout(_requestTimeout);
     }
     _storeCookie(response);
     final decoded = response.body.isEmpty
@@ -295,6 +358,7 @@ class BackendServiceBookingRepository implements ServiceRepository {
   }
 
   void _storeCookie(http.Response response) {
+    if (managesCookiesAutomatically) return;
     final setCookie = response.headers['set-cookie'];
     if (setCookie == null || setCookie.isEmpty) return;
     final cookies = <String>[];

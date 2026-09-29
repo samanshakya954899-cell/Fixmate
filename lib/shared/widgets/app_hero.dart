@@ -15,14 +15,22 @@ class AppHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(26),
       child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [_primaryColor, Color(0xFF12455A), Color(0xFF17212B)],
+            colors: [_primaryColor, Color(0xFF4344B8), _navyColor],
           ),
+          border: Border.all(color: Colors.white.withValues(alpha: .18)),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x385B5CE2),
+              blurRadius: 28,
+              offset: Offset(0, 14),
+            ),
+          ],
         ),
         child: Stack(
           children: [
@@ -34,21 +42,47 @@ class AppHero extends StatelessWidget {
                 child: Container(
                   width: 150,
                   height: 34,
-                  color: Colors.white.withOpacity(0.08),
+                  color: Colors.white.withValues(alpha: .08),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 24,
+              bottom: -52,
+              child: Container(
+                width: 142,
+                height: 142,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: .07),
+                  border:
+                      Border.all(color: Colors.white.withValues(alpha: .08)),
                 ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(24),
               child: Row(
                 children: [
                   Container(
                     width: 58,
                     height: 58,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.16),
+                      color: Colors.white.withValues(alpha: .16),
                       border: Border.all(color: Colors.white24),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x33000000),
+                          blurRadius: 18,
+                          offset: Offset(0, 8),
+                        ),
+                        BoxShadow(
+                          color: Color(0x26FFFFFF),
+                          blurRadius: 8,
+                          offset: Offset(-3, -3),
+                        ),
+                      ],
                     ),
                     child: Icon(icon, color: Colors.white, size: 31),
                   ),
@@ -86,4 +120,3 @@ class AppHero extends StatelessWidget {
     );
   }
 }
-

@@ -45,7 +45,8 @@ class ServiceBookingRepository implements ServiceRepository {
       'provider_id': 'provider-1',
       'category_id': 'cat-ac',
       'title': 'AC service and gas refill',
-      'description': 'Split and window AC servicing, cooling issues, and gas refills.',
+      'description':
+          'Split and window AC servicing, cooling issues, and gas refills.',
       'base_charge': 499,
       'city': 'Delhi',
       'service_area': 'Rohini, Pitampura',
@@ -83,7 +84,8 @@ class ServiceBookingRepository implements ServiceRepository {
   List<Map<String, dynamic>> _localProviderServices({String? categoryId}) {
     return _demoServices
         .where(
-          (service) => categoryId == null || service['category_id'] == categoryId,
+          (service) =>
+              categoryId == null || service['category_id'] == categoryId,
         )
         .toList();
   }
@@ -154,10 +156,37 @@ class ServiceBookingRepository implements ServiceRepository {
     return response.session != null;
   }
 
+  Future<bool> accountExists(String email) {
+    throw Exception('Email OTP requires the FixMate Django backend.');
+  }
+
+  Future<void> requestSignupOtp({
+    required String name,
+    required String companyName,
+    required String email,
+    required String password,
+    required String accountType,
+  }) {
+    throw Exception('Email OTP requires the FixMate Django backend.');
+  }
+
+  Future<void> verifySignupOtp(String email, String code) {
+    throw Exception('Email OTP requires the FixMate Django backend.');
+  }
+
+  Future<void> requestSignInOtp(String email) {
+    throw Exception('Email OTP requires the FixMate Django backend.');
+  }
+
+  Future<void> verifySignInOtp(String email, String code) {
+    throw Exception('Email OTP requires the FixMate Django backend.');
+  }
+
   Future<void> rememberPreferredRole(String role) async {
     if (!configured) return;
     final normalizedRole = _normalizedRole(role);
-    final metadata = Map<String, dynamic>.from(_currentUser?.userMetadata ?? {});
+    final metadata =
+        Map<String, dynamic>.from(_currentUser?.userMetadata ?? {});
     metadata['last_role'] = normalizedRole;
     metadata['account_type'] ??= normalizedRole;
     await _client.auth.updateUser(UserAttributes(data: metadata));
@@ -192,7 +221,8 @@ class ServiceBookingRepository implements ServiceRepository {
 
   Future<List<Map<String, dynamic>>> providerServices(
       {String? categoryId}) async {
-    if (_localStoreActive) return _localProviderServices(categoryId: categoryId);
+    if (_localStoreActive)
+      return _localProviderServices(categoryId: categoryId);
     if (!_hasCurrentUser) return [];
     try {
       var query = _client.from('provider_services').select(
@@ -275,29 +305,23 @@ class ServiceBookingRepository implements ServiceRepository {
     }
     if (!_hasCurrentUser) throw Exception('Please sign in again.');
     try {
-      await _client
-          .from('profiles')
-          .upsert({
-            'id': currentUserId,
-            'full_name': _currentUser?.userMetadata?['full_name'] ?? '',
-            'roles': ['customer', 'provider'],
-          })
-          .timeout(_requestTimeout);
+      await _client.from('profiles').upsert({
+        'id': currentUserId,
+        'full_name': _currentUser?.userMetadata?['full_name'] ?? '',
+        'roles': ['customer', 'provider'],
+      }).timeout(_requestTimeout);
       await _client
           .from('provider_profiles')
           .upsert({'id': currentUserId}).timeout(_requestTimeout);
-      await _client
-          .from('provider_services')
-          .insert({
-            'provider_id': currentUserId,
-            'category_id': categoryId,
-            'title': title,
-            'description': description,
-            'base_charge': charge,
-            'city': city,
-            'service_area': serviceArea,
-          })
-          .timeout(_requestTimeout);
+      await _client.from('provider_services').insert({
+        'provider_id': currentUserId,
+        'category_id': categoryId,
+        'title': title,
+        'description': description,
+        'base_charge': charge,
+        'city': city,
+        'service_area': serviceArea,
+      }).timeout(_requestTimeout);
     } catch (e) {
       if (_isMissingSchemaError(e)) {
         throw _missingBackendSchemaException();
@@ -492,4 +516,3 @@ class ServiceBookingRepository implements ServiceRepository {
     return value == 'provider' ? 'provider' : 'customer';
   }
 }
-

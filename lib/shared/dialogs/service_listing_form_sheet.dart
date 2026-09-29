@@ -5,10 +5,10 @@ Future<void> _openServiceListingForm(
   final saved = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.white,
+    backgroundColor: const Color(0xFFF9F9FF),
     showDragHandle: true,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
     ),
     builder: (context) => _ServiceListingFormSheet(repo: repo),
   );
@@ -49,10 +49,10 @@ class _ServiceListingFormSheetState extends State<_ServiceListingFormSheet> {
       animation: viewModel,
       builder: (context, _) => Padding(
         padding: EdgeInsets.only(
-          left: 16,
-          right: 16,
-          top: 16,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+          left: 20,
+          right: 20,
+          top: 12,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 24,
         ),
         child: SingleChildScrollView(
           child: Column(
@@ -74,8 +74,7 @@ class _ServiceListingFormSheetState extends State<_ServiceListingFormSheet> {
                           value: category['id'] as String,
                           child: Text(category['name'])),
                   ],
-                  onChanged:
-                      viewModel.saving ? null : viewModel.selectCategory,
+                  onChanged: viewModel.saving ? null : viewModel.selectCategory,
                 ),
               if (viewModel.errorMessage != null) ...[
                 const SizedBox(height: 10),
@@ -86,33 +85,41 @@ class _ServiceListingFormSheetState extends State<_ServiceListingFormSheet> {
               ],
               const SizedBox(height: 8),
               TextField(
-                  controller: viewModel.title,
-                  enabled: !viewModel.saving,
-                  decoration:
-                      const InputDecoration(labelText: 'Service title')),
-              const SizedBox(height: 8),
-              TextField(
                   controller: viewModel.description,
                   enabled: !viewModel.saving,
-                  decoration: const InputDecoration(labelText: 'Description')),
+                  minLines: 2,
+                  maxLines: 4,
+                  decoration: const InputDecoration(
+                    labelText: 'Description',
+                    prefixIcon: Icon(Icons.notes_outlined),
+                  )),
               const SizedBox(height: 8),
               TextField(
                 controller: viewModel.charge,
                 enabled: !viewModel.saving,
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: const InputDecoration(labelText: 'Base charge'),
+                decoration: const InputDecoration(
+                  labelText: 'Base charge',
+                  prefixIcon: Icon(Icons.currency_rupee),
+                ),
               ),
               const SizedBox(height: 8),
               TextField(
                   controller: viewModel.city,
                   enabled: !viewModel.saving,
-                  decoration: const InputDecoration(labelText: 'City')),
+                  decoration: const InputDecoration(
+                    labelText: 'City',
+                    prefixIcon: Icon(Icons.location_city_outlined),
+                  )),
               const SizedBox(height: 8),
               TextField(
                   controller: viewModel.area,
                   enabled: !viewModel.saving,
-                  decoration: const InputDecoration(labelText: 'Service area')),
+                  decoration: const InputDecoration(
+                    labelText: 'Service area',
+                    prefixIcon: Icon(Icons.map_outlined),
+                  )),
               const SizedBox(height: 12),
               FilledButton.icon(
                 onPressed: viewModel.loading || viewModel.saving
@@ -139,5 +146,3 @@ class _ServiceListingFormSheetState extends State<_ServiceListingFormSheet> {
     );
   }
 }
-
-
